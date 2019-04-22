@@ -45,7 +45,8 @@ var rsaTestData = []struct {
 }
 
 func TestRSAVerify(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key.pub")
+	keyData, _ := ioutil.ReadFile("test/sample_key.pub")
+	key, _ := jwt.ParseRSAPublicKeyFromPEM(keyData)
 
 	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
@@ -62,7 +63,8 @@ func TestRSAVerify(t *testing.T) {
 }
 
 func TestRSASign(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key")
+	keyData, _ := ioutil.ReadFile("test/sample_key")
+	key, _ := jwt.ParseRSAPrivateKeyFromPEM(keyData)
 
 	for _, data := range rsaTestData {
 		if data.valid {
@@ -112,6 +114,7 @@ func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 
 func TestRSAKeyParsing(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
+	secureKey, _ := ioutil.ReadFile("test/privateSecure.pem")
 	pubKey, _ := ioutil.ReadFile("test/sample_key.pub")
 	badKey := []byte("All your base are belong to key")
 
@@ -126,6 +129,14 @@ func TestRSAKeyParsing(t *testing.T) {
 
 	if k, e := jwt.ParseRSAPrivateKeyFromPEM(badKey); e == nil {
 		t.Errorf("Parsed invalid key as valid private key: %v", k)
+	}
+
+	if _, e := jwt.ParseRSAPrivateKeyFromPEMWithPassword(secureKey, "password"); e != nil {
+		t.Errorf("Failed to parse valid private key with password: %v", e)
+	}
+
+	if k, e := jwt.ParseRSAPrivateKeyFromPEMWithPassword(secureKey, "123132"); e == nil {
+		t.Errorf("Parsed private key with invalid password %v", k)
 	}
 
 	// Test parsePublicKey
